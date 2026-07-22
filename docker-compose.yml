@@ -1,0 +1,38 @@
+version: "3.8"
+
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: talentflow_postgres
+    environment:
+      POSTGRES_DB: talentflow
+      POSTGRES_USER: app
+      POSTGRES_PASSWORD: SecretPassword123!
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: ../docker/php/Dockerfile
+    container_name: talentflow_backend
+    volumes:
+      - ./backend:/var/www/html
+    environment:
+      DATABASE_URL: "postgresql://app:SecretPassword123!@database:5432/talentflow?serverVersion=16&charset=utf8"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: ../docker/vue/Dockerfile
+    container_name: talentflow_frontend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "5173:5173"
+
+volumes:
+  pg_data:
