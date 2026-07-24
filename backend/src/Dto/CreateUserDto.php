@@ -24,7 +24,9 @@ final class CreateUserDto
 
     #[Assert\Choice(
         choices: ['ROLE_CANDIDATE', 'ROLE_RECRUITER'],
+        multiple: true,
         message: "Le rôle sélectionné n'est pas valide."
     )]
-    public string $role = 'ROLE_CANDIDATE';
+    #[Assert\Type('array')]
+    public array $roles = [];
 }
