@@ -12,6 +12,7 @@ final class UserResponseDto
         public ?string $firstName,
         public ?string $lastName,
         public string $createdAt,
+        public ?string $role = null
     ) {}
 
     public static function fromEntity(User $user): self
@@ -21,7 +22,8 @@ final class UserResponseDto
             $user->getEmail(),
             $user->getFirstName(),
             $user->getLastName(),
-            $user->getCreatedAt()->format('Y-m-d')
+            $user->getCreatedAt()->format('Y-m-d'),
+            $user->getRoles()[0] ?? null
         );
     }
 }
