@@ -52,6 +52,11 @@ final class UserService
         $user->setEmail($createUserDto->email);
         $user->setFirstName($createUserDto->firstName ?: null);
         $user->setLastName($createUserDto->lastName ?: null);
+
+        // roles
+        if(!empty($createUserDto->roles)){
+            $user->setRoles($createUserDto->roles);
+        }
         $hashedPassword = $this->passwordHasher->hashPassword($user, $createUserDto->password);
         $user->setPassword($hashedPassword);
         $this->userRepository->save($user, true);
@@ -90,15 +95,13 @@ final class UserService
     {
         $violations = $this->validator->validate($dto);
 
-        if (count($violations) === 0) {
-            return;
-        }
+        if (count($violations) > 0) {
+            $errors = [];
+            foreach ($violations as $violation) {
+                $errors[$violation->getPropertyPath()][] = $violation->getMessage();
+            }
 
-        $errors = [];
-        foreach ($violations as $violation) {
-            $errors[$violation->getPropertyPath()][] = $violation->getMessage();
+            throw new ValidationException($errors, 422);
         }
-
-        throw new ValidationException($errors, 422);
     }
 }
