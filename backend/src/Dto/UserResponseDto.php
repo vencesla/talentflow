@@ -8,11 +8,11 @@ final class UserResponseDto
 {
     public function __construct(
         public int $id,
-        public string $email,
+        public ?string $email,
         public ?string $firstName,
         public ?string $lastName,
         public string $createdAt,
-        public ?string $role = null
+        public array $roles
     ) {}
 
     public static function fromEntity(User $user): self
@@ -23,7 +23,7 @@ final class UserResponseDto
             $user->getFirstName(),
             $user->getLastName(),
             $user->getCreatedAt()->format('Y-m-d'),
-            $user->getRoles()[0] ?? null
+            $user->getRoles()
         );
     }
 }
