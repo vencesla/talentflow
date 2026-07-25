@@ -1,0 +1,57 @@
+/* src/assets/css/auth.css */
+
+/* --- On-glems soulignés (AuthView) --- */
+.tab-link {
+  color: #6c757d;
+  background-color: transparent;
+  position: relative;
+  transition: color 0.2s ease-in-out;
+}
+
+.tab-link:hover {
+  color: #0d6efd;
+}
+
+.tab-link.active {
+  color: #0d6efd;
+  background-color: transparent;
+}
+
+/* Ligne bleue de soulignement active */
+.tab-link.active::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background-color: #0d6efd;
+  border-top-left-radius: 3px;
+  border-top-right-radius: 3px;
+}
+
+/* --- Bouton & thèmes Violet Recruteur --- */
+.btn-purple {
+  background-color: #6f42c1;
+  border-color: #6f42c1;
+}
+
+.btn-purple:hover,
+.btn-purple:focus {
+  background-color: #59339d;
+  border-color: #59339d;
+  color: #ffffff;
+}
+
+.text-purple {
+  color: #6f42c1 !important;
+}
+
+/* --- Utilitaires de mise en page --- */
+.transition-all {
+  transition: all 0.2s ease-in-out;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
