@@ -22,6 +22,7 @@ final class CreateUserDto
     #[Assert\NotBlank(message: "Le nom est obligatoire.")]
     public ?string $lastName = null;
 
+    #[Assert\NotBlank(message: "Au moins un rôle doit être spécifié.")]
     #[Assert\Choice(
         choices: ['ROLE_CANDIDATE', 'ROLE_RECRUITER'],
         multiple: true,

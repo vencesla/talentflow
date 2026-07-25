@@ -10,3 +10,6 @@ user_controllers:
         namespace: App\Controller\User
     type: attribute
     prefix: /api
+
+api_login_check:
+    path: /api/login_check

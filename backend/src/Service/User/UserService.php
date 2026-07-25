@@ -42,7 +42,7 @@ final class UserService
         if ($createUserDto->email !== null) {
             $existingUser = $this->userRepository->findOneBy(['email' => $createUserDto->email]);
             if ($existingUser) {
-                throw new \App\Exception\ValidationException([
+                throw new ValidationException([
                     'email' => ['Cet email est déjà utilisé.']
                 ], 422);
             }
@@ -52,13 +52,10 @@ final class UserService
         $user->setEmail($createUserDto->email);
         $user->setFirstName($createUserDto->firstName ?: null);
         $user->setLastName($createUserDto->lastName ?: null);
-
-        // roles
-        if(!empty($createUserDto->roles)){
-            $user->setRoles($createUserDto->roles);
-        }
+        $user->setRoles($createUserDto->roles);
         $hashedPassword = $this->passwordHasher->hashPassword($user, $createUserDto->password);
         $user->setPassword($hashedPassword);
+
         $this->userRepository->save($user, true);
 
         return UserResponseDto::fromEntity($user);
@@ -68,18 +65,25 @@ final class UserService
     {
         $this->validateOrThrow($updateUserDto);
 
-        if ($updateUserDto->email !== $user->getEmail()) {
+        // Verification de l'email uniquement s'il est fourni et différent
+        if ($updateUserDto->email !== null && $updateUserDto->email !== $user->getEmail()) {
             $existingUser = $this->userRepository->findOneBy(['email' => $updateUserDto->email]);
             if ($existingUser) {
                 throw new ValidationException([
                     'email' => ['Cet email est déjà utilisé.']
                 ], 422);
             }
+            $user->setEmail($updateUserDto->email);
         }
 
-        $user->setEmail($updateUserDto->email);
-        $user->setFirstName($updateUserDto->firstName);
-        $user->setLastName($updateUserDto->lastName);
+        // Mise à jour sélective des champs
+        if ($updateUserDto->firstName !== null) {
+            $user->setFirstName($updateUserDto->firstName);
+        }
+
+        if ($updateUserDto->lastName !== null) {
+            $user->setLastName($updateUserDto->lastName);
+        }
 
         $this->userRepository->save($user, true);
 
