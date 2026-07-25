@@ -292,38 +292,51 @@ watch(
   },
 );
 
+// 1. INSCRIPTION
 const handleRegister = async () => {
   errorMessage.value = "";
   try {
-    // 1. Inscription
     const user = await authStore.register({
       ...registerForm.value,
       roles: [selectedRole.value],
     });
 
-    console.log("Utilisateur inscrit avec succès :", user);
-    // 2. Redirection
+    // Redirection automatique basée sur les rôles renvoyés
     await redirectUserByRole(user.roles, router);
   } catch (err: any) {
-    console.error("ERREUR DÉTAILLÉE DU CATCH :", err);
-    errorMessage.value = authStore.error || "Erreur lors de l'inscription";
+    console.error("Erreur lors de l'inscription :", err);
+    if (err.response?.data?.email) {
+      errorMessage.value = err.response.data.email[0];
+    } else if (err.response?.data?.message) {
+      errorMessage.value = err.response.data.message;
+    } else {
+      errorMessage.value =
+        authStore.error || "Une erreur est survenue lors de l'inscription.";
+    }
   }
 };
 
+// 2. CONNEXION JWT
 const handleLogin = async () => {
   errorMessage.value = "";
   try {
-    await authStore.login(loginForm.value.email);
+    // Transmet bien l'objet complet { email, password } pour le JWT /login_check
+    await authStore.login({
+      email: loginForm.value.email,
+      password: loginForm.value.password,
+    });
 
-    if (authStore.isCandidate) {
-      router.push("/candidate/dashboard");
-    } else if (authStore.isRecruiter) {
-      router.push("/recruiter/dashboard");
-    } else {
-      router.push("/");
+    if (authStore.currentUser) {
+      await redirectUserByRole(authStore.currentUser.roles, router);
     }
   } catch (err: any) {
-    errorMessage.value = authStore.error || "Email ou mot de passe incorrect";
+    console.error("Erreur de connexion :", err);
+    if (err.response?.status === 401) {
+      errorMessage.value = "Email ou mot de passe incorrect.";
+    } else {
+      errorMessage.value =
+        authStore.error || "Impossible de se connecter au serveur.";
+    }
   }
 };
 </script>

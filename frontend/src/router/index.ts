@@ -9,17 +9,21 @@ const router = createRouter({
       path: "/",
       name: "home",
       component: HomeView,
-      meta: { title: "HelloWork - Emploi et Recrutement" },
-    },
-    {
-      path: "/register",
-      name: "register",
-      component: () => import("@/views/auth/RegisterView.vue"),
+      meta: { title: "TalentFlow - Emploi et Recrutement" },
     },
     {
       path: "/connexion-inscription.html",
       name: "auth",
       component: () => import("@/views/auth/AuthView.vue"),
+      meta: { title: "Connexion / Inscription - TalentFlow" },
+    },
+    {
+      path: "/login",
+      redirect: { name: "auth", hash: "#connexion" },
+    },
+    {
+      path: "/register",
+      redirect: { name: "auth", hash: "#inscription" },
     },
     {
       path: "/recruiter/dashboard",
@@ -33,19 +37,28 @@ const router = createRouter({
       component: () => import("@/views/candidate/DashboardView.vue"),
       meta: { requiresAuth: true, role: "ROLE_CANDIDATE" },
     },
+    {
+      path: "/:pathMatch(.*)*",
+      redirect: { name: "home" },
+    },
   ],
 });
 
 // Navigation Guard
-router.beforeEach((to, from, next) => {
+router.beforeEach((to, _from, next) => {
   const authStore = useAuthStore();
 
-  // 1. Protection des routes nécessitant une connexion
-  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
-    return next({ name: "auth" });
+  if (to.name === "auth" && authStore.isAuthenticated) {
+    if (authStore.hasRole("ROLE_RECRUITER")) {
+      return next({ name: "recruiter-dashboard" });
+    }
+    return next({ name: "candidate-dashboard" });
   }
 
-  // 2. Vérification du rôle avec la méthode `hasRole` du store
+  if (to.meta.requiresAuth && !authStore.isAuthenticated) {
+    return next({ name: "auth", hash: "#connexion" });
+  }
+
   const requiredRole = to.meta.role as string | undefined;
 
   if (requiredRole && !authStore.hasRole(requiredRole)) {
@@ -53,13 +66,19 @@ router.beforeEach((to, from, next) => {
       `[Guard] Accès refusé à ${to.fullPath}. Rôle requis : ${requiredRole}`,
     );
 
-    // Redirige vers home si l'utilisateur n'a pas le bon rôle
-    if (to.name !== "home") {
-      return next({ name: "home" });
+    // Redirige vers son dashboard s'il est connecté avec un autre rôle, sinon home
+    if (authStore.hasRole("ROLE_RECRUITER")) {
+      return next({ name: "recruiter-dashboard" });
+    } else if (authStore.hasRole("ROLE_CANDIDATE")) {
+      return next({ name: "candidate-dashboard" });
     }
+    return next({ name: "home" });
   }
 
-  // 3. Tout est OK, on autorise la navigation
+  if (to.meta.title) {
+    document.title = to.meta.title as string;
+  }
+
   next();
 });
 

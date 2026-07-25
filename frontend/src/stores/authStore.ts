@@ -1,115 +1,152 @@
 import { defineStore } from "pinia";
-import { userApi } from "@/api/user.api";
-import type { ApiUser } from "@/schemas/user.schema";
+import api from "@/api/axios";
+
+export interface User {
+  id: number;
+  email: string;
+  firstName: string | null;
+  lastName: string | null;
+  roles: string[];
+}
+
+export interface RegisterPayload {
+  firstName: string;
+  lastName: string;
+  email: string;
+  password: string;
+  roles: string[];
+}
 
 interface AuthState {
-  currentUser: ApiUser | null;
+  token: string | null;
+  currentUser: User | null;
   loading: boolean;
   error: string | null;
 }
 
 export const useAuthStore = defineStore("auth", {
   state: (): AuthState => ({
-    // On conserve l'utilisateur dans le localStorage pour éviter de perdre la session au F5
+    token: localStorage.getItem("token") || null,
     currentUser: JSON.parse(localStorage.getItem("user") || "null"),
     loading: false,
     error: null,
   }),
 
   getters: {
-    user: (state) => state.currentUser,
+    isAuthenticated: (state): boolean => !!state.token,
+    isCandidate: (state): boolean =>
+      state.currentUser?.roles.includes("ROLE_CANDIDATE") ?? false,
+    isRecruiter: (state): boolean =>
+      state.currentUser?.roles.includes("ROLE_RECRUITER") ?? false,
+    isAdmin: (state): boolean =>
+      state.currentUser?.roles.includes("ROLE_ADMIN") ?? false,
 
-    // Connecté si un utilisateur existe en mémoire
-    isAuthenticated: (state) => !!state.currentUser,
-
-    // Vérification générique de rôle (compatible string[] ou objets)
     hasRole: (state) => {
       return (role: string): boolean => {
-        if (!state.currentUser?.roles) return false;
-        return state.currentUser.roles.some((r) =>
-          typeof r === "string" ? r === role : (r as any).name === role,
-        );
+        if (!state.currentUser || !state.currentUser.roles) {
+          return false;
+        }
+        return state.currentUser.roles.includes(role);
       };
-    },
-
-    isCandidate(): boolean {
-      return this.hasRole("ROLE_CANDIDATE");
-    },
-
-    isRecruiter(): boolean {
-      return this.hasRole("ROLE_RECRUITER");
     },
   },
 
   actions: {
-    // 🔐 Inscription : enregistre l'utilisateur directement après création
-    async register(userData: {
-      email: string;
-      firstName: string;
-      lastName: string;
-      roles: string[];
-    }) {
+    /**
+     * Inscription : Création du compte (/user) puis auto-connexion
+     */
+    async register(payload: RegisterPayload): Promise<User> {
       this.loading = true;
       this.error = null;
-
       try {
-        // Envoi au backend
-        const newUser = await userApi.create(userData);
+        // 1. Création de l'utilisateur
+        await api.post("/user", payload);
 
-        // On connecte immédiatement l'utilisateur
-        this.setUserSession(newUser);
-        return newUser;
-      } catch (err: any) {
-        console.error("Erreur détaillée lors de l'inscription :", err);
+        // 2. Connexion automatique après inscription
+        await this.login({
+          email: payload.email,
+          password: payload.password,
+        });
 
-        if (err.errors) {
-          console.error("Erreurs Zod / Validation :", err.errors);
+        if (!this.currentUser) {
+          throw new Error(
+            "Impossible de récupérer l'utilisateur après inscription.",
+          );
         }
 
-        // Enregistre l'erreur dans le state
+        return this.currentUser;
+      } catch (err: any) {
         this.error =
-          err.response?.data?.message ||
-          err.message ||
-          "Erreur lors de l'inscription";
-
-        // ⚠️ CRUCIAL : On propage l'erreur pour que le try/catch de AuthView reçoive l'échec
+          err.response?.data?.message || "Erreur lors de l'inscription.";
         throw err;
       } finally {
         this.loading = false;
       }
     },
 
-    async login(email: string) {
+    /**
+     * Connexion : Obtention du token puis récupération du profil utilisateur (/me)
+     */
+    async login(credentials: { email: string; password: string }) {
       this.loading = true;
       this.error = null;
       try {
-        const users = await userApi.getAll();
-        const user = users.find((u: ApiUser) => u.email === email);
+        // 1. Authentification LexikJWT
+        const { data } = await api.post<{ token: string }>(
+          "/login_check",
+          credentials,
+        );
 
-        if (!user) {
-          throw new Error("Aucun compte trouvé avec cet email");
-        }
+        this.token = data.token;
+        localStorage.setItem("token", data.token);
 
-        this.setUserSession(user);
-        return user;
-      } catch (e: any) {
-        this.error = e.message || "Erreur de connexion";
-        throw e;
+        // 2. Récupération des infos de l'utilisateur connecté
+        await this.fetchCurrentUser();
+      } catch (err: any) {
+        this.error = err.response?.data?.message || "Identifiants invalides.";
+        throw err;
       } finally {
         this.loading = false;
       }
     },
 
-    // Déconnexion
-    logout() {
-      this.currentUser = null;
-      localStorage.removeItem("user");
+    /**
+     * Charge les infos du profil depuis `/api/me`
+     */
+    async fetchCurrentUser() {
+      try {
+        const { data } = await api.get<User>("/user/me");
+        this.currentUser = data;
+        localStorage.setItem("user", JSON.stringify(data));
+      } catch (error) {
+        this.logout();
+        throw error;
+      }
     },
 
-    // Helper interne pour sauvegarder dans Pinia + localStorage
-    setUserSession(user: ApiUser) {
-      this.currentUser = user;
-      localStorage.setItem("user", JSON.stringify(user));
+    /**
+     * Mettre à jour son propre profil (/api/me)
+     */
+    async updateProfile(updatedData: {
+      email?: string;
+      firstName?: string;
+      lastName?: string;
+    }) {
+      const { data } = await api.put<User>("/me", updatedData);
+      this.currentUser = data;
+      localStorage.setItem("user", JSON.stringify(data));
+      return data;
+    },
+
+    /**
+     * Déconnexion
+     */
+    logout() {
+      this.token = null;
+      this.currentUser = null;
+      this.error = null;
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
     },
   },
 });

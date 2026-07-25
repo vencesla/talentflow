@@ -44,3 +44,4 @@ export const registerSchema = z.object({
 });
 export type CreateUserInput = z.infer<typeof CreateUserSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
+export type UserResponseDto = z.infer<typeof ApiUserSchema>;
