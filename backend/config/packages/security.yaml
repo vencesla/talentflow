@@ -16,6 +16,24 @@ security:
             # Ensure dev tools and static assets are always allowed
             pattern: ^/(_profiler|_wdt|assets|build)/
             security: false
+
+        login:
+            pattern: ^/api/login_check
+            stateless: true
+            methods: [POST]
+            json_login:
+                check_path: /api/login_check
+                username_path: email
+                password_path: password
+                success_handler: lexik_jwt_authentication.handler.authentication_success
+                failure_handler: lexik_jwt_authentication.handler.authentication_failure
+
+        # Firewall principal de l'API
+        api:
+            pattern: ^/api
+            stateless: true
+            jwt: ~
+
         main:
             lazy: true
             provider: app_user_provider
@@ -28,10 +46,16 @@ security:
 
     # Note: Only the *first* matching rule is applied
     access_control:
+        # Endpoints publics
         - { path: ^/api, roles: PUBLIC_ACCESS, methods: [OPTIONS] }
+        - { path: ^/api/login_check, roles: PUBLIC_ACCESS }
         - { path: ^/api/user, roles: PUBLIC_ACCESS, methods: [POST] }
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
+
+        # Endpoints sécurisés pour tout utilisateur authentifié
+        - { path: ^/api/user/me, roles: IS_AUTHENTICATED_FULLY }
+
+        # Protection globale du reste de l'API (chaque contrôleur peut affiner avec #[IsGranted])
+        - { path: ^/api, roles: IS_AUTHENTICATED_FULLY }
 
 when@test:
     security:
