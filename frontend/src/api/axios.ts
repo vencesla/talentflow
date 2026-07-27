@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "@/stores/authStore";
 
 const api = axios.create({
   baseURL: "http://localhost:8000/api",
@@ -23,12 +24,21 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 401) {
-      // Déconnexion automatique si le token n'est plus valide/expiré
-      localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.location.href = "/login";
+    const isAuthEndpoint = error.config?.url?.includes("/login_check");
+
+    // Redirige uniquement si le 401 survient hors de la page de connexion
+    if (error.response?.status === 401 && !isAuthEndpoint) {
+      const authStore = useAuthStore();
+
+      // Réinitialise l'état Pinia + localStorage
+      authStore.logout();
+
+      // Redirection si l'utilisateur n'est pas déjà sur la page de login
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
+
     return Promise.reject(error);
   },
 );
