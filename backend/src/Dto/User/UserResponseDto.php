@@ -14,9 +14,7 @@ final class UserResponseDto
         public ?array $roles,
         public ?array $jobTitles,
         public ?array $locations,
-        public ?array $contractTypes,
-        public ?string $companyName,
-        public ?string $companyWebsite
+        public ?array $contractTypes
     ) {}
 
     public static function fromEntity(User $user): self
@@ -30,9 +28,7 @@ final class UserResponseDto
             $user->getRoles(),
             $user->getJobTitles(),
             $user->getLocations(),
-            $user->getContractTypes(),
-            $user->getCompanyName(),
-            $user->getCompanyWebsite()
+            $user->getContractTypes()
         );
     }
 }
