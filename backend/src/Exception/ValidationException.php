@@ -4,7 +4,7 @@ namespace App\Exception;
 
 use RuntimeException;
 
-final class ValidationException extends \RuntimeException
+final class ValidationException extends RuntimeException
 {
     public function __construct(
         private readonly array $errors,
