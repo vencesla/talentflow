@@ -42,6 +42,21 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $createdAt = null;
 
+    #[ORM\Column(nullable: true)]
+    private ?array $jobTitles = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?array $locations = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?array $contractTypes = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $companyName = null;
+
+    #[ORM\Column(length: 255, nullable: true)]
+    private ?string $companyWebsite = null;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -158,5 +173,65 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         if ($this->createdAt === null) {
             $this->createdAt = new \DateTimeImmutable();
         }
+    }
+
+    public function getJobTitles(): ?array
+    {
+        return $this->jobTitles;
+    }
+
+    public function setJobTitles(?array $jobTitles): static
+    {
+        $this->jobTitles = $jobTitles;
+
+        return $this;
+    }
+
+    public function getLocations(): ?array
+    {
+        return $this->locations;
+    }
+
+    public function setLocations(?array $locations): static
+    {
+        $this->locations = $locations;
+
+        return $this;
+    }
+
+    public function getContractTypes(): ?array
+    {
+        return $this->contractTypes;
+    }
+
+    public function setContractTypes(?array $contractTypes): static
+    {
+        $this->contractTypes = $contractTypes;
+
+        return $this;
+    }
+
+    public function getCompanyName(): ?string
+    {
+        return $this->companyName;
+    }
+
+    public function setCompanyName(?string $companyName): static
+    {
+        $this->companyName = $companyName;
+
+        return $this;
+    }
+
+    public function getCompanyWebsite(): ?string
+    {
+        return $this->companyWebsite;
+    }
+
+    public function setCompanyWebsite(?string $companyWebsite): static
+    {
+        $this->companyWebsite = $companyWebsite;
+
+        return $this;
     }
 }

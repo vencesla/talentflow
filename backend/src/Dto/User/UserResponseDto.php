@@ -1,5 +1,4 @@
 <?php
-
 namespace App\Dto\User;
 
 use App\Entity\User;
@@ -12,7 +11,12 @@ final class UserResponseDto
         public ?string $firstName,
         public ?string $lastName,
         public string $createdAt,
-        public array $roles
+        public ?array $roles,
+        public ?array $jobTitles,
+        public ?array $locations,
+        public ?array $contractTypes,
+        public ?string $companyName,
+        public ?string $companyWebsite
     ) {}
 
     public static function fromEntity(User $user): self
@@ -23,7 +27,12 @@ final class UserResponseDto
             $user->getFirstName(),
             $user->getLastName(),
             $user->getCreatedAt()->format('Y-m-d'),
-            $user->getRoles()
+            $user->getRoles(),
+            $user->getJobTitles(),
+            $user->getLocations(),
+            $user->getContractTypes(),
+            $user->getCompanyName(),
+            $user->getCompanyWebsite()
         );
     }
 }
