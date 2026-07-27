@@ -48,11 +48,29 @@ final class UserService
             }
         }
 
+        // Validation métier spécifique aux recruteurs
+        if (in_array('ROLE_RECRUITER', $createUserDto->roles, true) && empty($createUserDto->companyName)) {
+            throw new ValidationException([
+                'companyName' => ['Le nom de l\'entreprise est obligatoire pour un recruteur.']
+            ], 422);
+        }
+
         $user = new User();
         $user->setEmail($createUserDto->email);
         $user->setFirstName($createUserDto->firstName ?: null);
         $user->setLastName($createUserDto->lastName ?: null);
         $user->setRoles($createUserDto->roles);
+
+        // Champs spécifiques selon le rôle
+        if (in_array('ROLE_RECRUITER', $createUserDto->roles, true)) {
+            $user->setCompanyName($createUserDto->companyName);
+            $user->setCompanyWebsite($createUserDto->companyWebsite ?: null);
+        } else {
+            $user->setLocations($createUserDto->locations);
+            $user->setJobTitles($createUserDto->jobTitles);
+            $user->setContractTypes($createUserDto->contractTypes);
+        }
+
         $hashedPassword = $this->passwordHasher->hashPassword($user, $createUserDto->password);
         $user->setPassword($hashedPassword);
 
