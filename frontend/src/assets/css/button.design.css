@@ -1,0 +1,60 @@
+/* Boutons plus petits et mieux proportionnés */
+.btn-primary,
+.btn-secondary {
+  padding: 0.4rem 0.85rem;
+  font-size: 0.825rem;
+  border-radius: 5px;
+  font-weight: 500;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  transition: all 0.15s ease-in-out;
+}
+
+/* Bouton principal */
+.btn-primary {
+  background-color: #2563eb;
+  color: #ffffff;
+  border: 1px solid #2563eb;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background-color: #1d4ed8;
+  border-color: #1d4ed8;
+}
+
+/* Bouton secondaire / Annuler */
+.btn-secondary {
+  background-color: #ffffff;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background-color: #f8fafc;
+  color: #1e293b;
+  border-color: #94a3b8;
+}
+
+.btn-close {
+  background: none;
+  border: none;
+  font-size: 1rem; /* Réduit de 1.2rem à 1rem */
+  cursor: pointer;
+  color: #94a3b8;
+  padding: 0.25rem;
+  line-height: 1;
+}
+
+.btn-close:hover {
+  color: #475569;
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  border-top: 1px solid #e2e8f0;
+  padding: 0.75rem 1.25rem;
+}

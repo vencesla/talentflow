@@ -32,7 +32,7 @@ export const useCompanyStore = defineStore("company", () => {
         industry: data.industry || "",
         description: data.description || "",
         website: data.website || "",
-        logoUrl: (data as any).logoUrl || (data as any).logo || "",
+        logo: (data as any).logo || (data as any).logo || "",
         address: data.address || "",
         zipCode: data.zipCode || "",
         city: data.city || "",

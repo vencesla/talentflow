@@ -58,18 +58,18 @@
       </div>
     </div>
 
-    <!-- URL du logo (Corrigé: type="text" et errors.logoUrl) -->
+    <!-- URL du logo (Corrigé: type="text" et errors.logo) -->
     <div class="col-12 text-start">
       <label for="logo" class="form-label">URL du Logo</label>
       <input
         id="logo"
         type="text"
         class="form-control"
-        :class="{ 'is-invalid': errors.logoUrl }"
-        v-model="modelValue.logoUrl"
+        :class="{ 'is-invalid': errors.logo }"
+        v-model="modelValue.logo"
       />
-      <div v-if="errors.logoUrl" class="invalid-feedback">
-        {{ errors.logoUrl }}
+      <div v-if="errors.logo" class="invalid-feedback">
+        {{ errors.logo }}
       </div>
     </div>
 

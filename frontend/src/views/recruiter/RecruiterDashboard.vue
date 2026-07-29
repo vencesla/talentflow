@@ -5,8 +5,8 @@
       <div class="company-info" v-if="companyStore.company">
         <div class="logo-wrapper">
           <img
-            v-if="companyStore.company.logoUrl"
-            :src="companyStore.company.logoUrl"
+            v-if="companyStore.company.logo"
+            :src="companyStore.company.logo"
             :alt="companyStore.company.name"
             class="logo"
           />
@@ -20,9 +20,24 @@
         </div>
       </div>
 
-      <button @click="goToCreateOffer" class="btn-primary">
-        + Déposer une offre
-      </button>
+      <!-- Actions Recruteur & Entreprise -->
+      <div class="header-actions">
+        <button
+          v-if="companyStore.company"
+          @click="
+            console.log('Clic aperçu !');
+            isModalOpen = true;
+          "
+          class="btn-secondary"
+          title="Voir la fiche entreprise"
+        >
+          Détails entreprise
+        </button>
+
+        <button @click="goToCreateOffer" class="btn-primary">
+          + Déposer une offre
+        </button>
+      </div>
     </header>
 
     <!-- Statistiques rapides -->
@@ -85,6 +100,13 @@
         </div>
       </div>
     </section>
+
+    <!-- Modal de consultation/détails de l'entreprise -->
+    <CompanyDetailModal
+      :is-open="isModalOpen"
+      :company="companyStore.company"
+      @close="isModalOpen = false"
+    />
   </div>
 </template>
 
@@ -93,13 +115,15 @@ import { ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { useAuthStore } from "@/stores/authStore";
 import { useCompanyStore } from "@/stores/companyStore";
+import CompanyDetailModal from "@/components/company/CompanyDetailModal.vue";
 import "@/assets/css/company.recru.css";
 
 const router = useRouter();
 const authStore = useAuthStore();
 const companyStore = useCompanyStore();
+const isModalOpen = ref(false);
 
-// Structure locale simulée ou issue de ton jobOfferStore
+// Structure locale simulée ou issue de votre jobOfferStore
 interface JobOfferItem {
   id: number;
   title: string;
@@ -120,7 +144,6 @@ onMounted(async () => {
   }
 
   // Simulation d'appel API pour les offres de l'entreprise
-  // (À remplacer par un appel à ton jobOfferStore / jobOfferRepository)
   setTimeout(() => {
     offers.value = [
       {

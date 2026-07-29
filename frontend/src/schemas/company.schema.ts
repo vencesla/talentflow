@@ -16,7 +16,7 @@ export const generalInfoSchema = z.object({
   industry: z.string().optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
   website: optionalUrl,
-  logoUrl: optionalUrl,
+  logo: z.string().nullable().optional(),
 });
 
 // Onglet 2 : Localisation / Adresse

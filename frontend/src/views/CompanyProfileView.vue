@@ -132,7 +132,7 @@ const formData = ref<updateCompanyType>({
   industry: "",
   description: "",
   website: "",
-  logoUrl: "",
+  logo: "",
   address: "",
   zipCode: "",
   city: "",
@@ -152,8 +152,8 @@ onMounted(async () => {
       industry: existingCompany.industry || "",
       description: existingCompany.description || "",
       website: existingCompany.website || "",
-      logoUrl:
-        (existingCompany as any).logoUrl || (existingCompany as any).logo || "",
+      logo:
+        (existingCompany as any).logo || (existingCompany as any).logo || "",
       address: existingCompany.address || "",
       zipCode: existingCompany.zipCode || "",
       city: existingCompany.city || "",
@@ -183,20 +183,13 @@ function goToLocationTab() {
     industry: formData.value.industry,
     description: formData.value.description,
     website: formData.value.website,
-    logoUrl: formData.value.logoUrl,
+    logo: formData.value.logo,
   };
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(generalData));
   hasDraft.value = true;
 
-  clearErrors([
-    "name",
-    "siret",
-    "industry",
-    "description",
-    "website",
-    "logoUrl",
-  ]);
+  clearErrors(["name", "siret", "industry", "description", "website", "logo"]);
   currentTab.value = "location";
 }
 
@@ -207,7 +200,7 @@ function tabHasErrors(tab: "general" | "location"): boolean {
     "industry",
     "description",
     "website",
-    "logoUrl",
+    "logo",
   ];
   const locationFields = ["address", "zipCode", "city", "country"];
   const targetFields = tab === "general" ? generalFields : locationFields;

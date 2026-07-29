@@ -49,11 +49,15 @@ final class CompanyService
     public function updateCompany(Company $company, CompanyUpdateDto $dto): CompanyResponseDto
     {
         $company->setName($dto->name ?? $company->getName());
+        $company->setSiret($dto->siret);
         $company->setIndustry($dto->industry);
+        $company->setWebsite($dto->website);
+        $company->setDescription($dto->description);
         $company->setAddress($dto->address);
-        $company->setZipCode($dto->zipCode);
         $company->setCity($dto->city);
+        $company->setZipCode($dto->zipCode);
         $company->setCountry($dto->country);
+        $company->setLogo($dto->logo);
 
         $this->companyRepository->save($company, true);
 

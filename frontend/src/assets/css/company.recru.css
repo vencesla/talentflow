@@ -204,3 +204,9 @@
   padding: 3rem 1rem;
   color: #718096;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}

@@ -11,6 +11,7 @@ import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "./style.css";
 import "@/assets/css/auth.css";
 import "@/assets/css/home.css";
+import "@/assets/css/button.design.css";
 
 const app = createApp(App);
 const pinia = createPinia();
