@@ -1,5 +1,5 @@
 <?php
-namespace App\EventListener;
+namespace App\EventSubscriber;
 
 use App\Dto\User\UserResponseDto;
 use App\Entity\User;

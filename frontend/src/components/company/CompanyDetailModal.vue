@@ -11,7 +11,6 @@
                 : company?.name || "Fiche entreprise"
             }}
           </h3>
-          <button class="btn-close" @click="emit('close')">✕</button>
         </div>
 
         <!-- Alerte Erreur -->
@@ -52,34 +51,11 @@
               </span>
             </div>
             <div class="info-item">
-              <span class="label">Logo :</span>
-              <span class="value">
-                <a
-                  v-if="company?.logo"
-                  :href="company.logo"
-                  target="_blank"
-                  class="link"
-                >
-                  {{ company.logo }}
-                </a>
-                <template v-else>Non renseigné</template>
-              </span>
-            </div>
-            <div class="info-item">
               <span class="label">Adresse :</span>
               <span class="value">
                 <template v-if="company?.address">
                   {{ company.address }}<br />
                   {{ company.zipCode }} {{ company.city }}
-                </template>
-                <template v-else>Non renseignée</template>
-              </span>
-            </div>
-            <div class="info-item">
-              <span class="label">Description :</span>
-              <span class="value">
-                <template v-if="company?.description">
-                  {{ company.description }}
                 </template>
                 <template v-else>Non renseignée</template>
               </span>
@@ -131,6 +107,11 @@
               type="url"
               placeholder="https://exemple.fr"
             />
+          </div>
+
+          <div class="form-group">
+            <label>Logo Entreprise</label>
+            <input v-model="formData.logo" type="url" />
           </div>
 
           <div class="form-group">
