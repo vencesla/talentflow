@@ -51,11 +51,11 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(nullable: true)]
     private ?array $contractTypes = null;
 
-    #[ORM\Column(length: 255, nullable: true)]
-    private ?string $companyName = null;
+    #[ORM\ManyToOne(inversedBy: 'users')]
+    private ?Company $company = null;
 
     #[ORM\Column(length: 255, nullable: true)]
-    private ?string $companyWebsite = null;
+    private ?string $industry = null;
 
     public function getId(): ?int
     {
@@ -211,26 +211,26 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
         return $this;
     }
 
-    public function getCompanyName(): ?string
+    public function getCompany(): ?Company
     {
-        return $this->companyName;
+        return $this->company;
     }
 
-    public function setCompanyName(?string $companyName): static
+    public function setCompany(?Company $company): static
     {
-        $this->companyName = $companyName;
+        $this->company = $company;
 
         return $this;
     }
 
-    public function getCompanyWebsite(): ?string
+    public function getIndustry(): ?string
     {
-        return $this->companyWebsite;
+        return $this->industry;
     }
 
-    public function setCompanyWebsite(?string $companyWebsite): static
+    public function setIndustry(?string $industry): static
     {
-        $this->companyWebsite = $companyWebsite;
+        $this->industry = $industry;
 
         return $this;
     }
