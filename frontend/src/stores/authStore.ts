@@ -1,21 +1,7 @@
 import { defineStore } from "pinia";
 import api from "@/api/axios";
-
-export interface User {
-  id: number;
-  email: string;
-  firstName: string | null;
-  lastName: string | null;
-  roles: string[];
-}
-
-export interface RegisterPayload {
-  firstName: string;
-  lastName: string;
-  email: string;
-  password: string;
-  roles: string[];
-}
+import { type User, type RegisterInput } from "@/schemas/user.schema";
+import { userRepository } from "@/repositories/userRepository";
 
 interface AuthState {
   token: string | null;
@@ -41,28 +27,29 @@ export const useAuthStore = defineStore("auth", {
     isAdmin: (state): boolean =>
       state.currentUser?.roles.includes("ROLE_ADMIN") ?? false,
 
-    hasRole: (state) => {
-      return (role: string): boolean => {
-        if (!state.currentUser || !state.currentUser.roles) {
-          return false;
-        }
-        return state.currentUser.roles.includes(role);
-      };
+    // Getter dynamique et réactif calculé depuis currentUser
+    hasCompany: (state): boolean => {
+      if (!state.currentUser) return false;
+      return (
+        state.currentUser.hasCompany === true ||
+        !!state.currentUser.companyId ||
+        !!(state.currentUser as any).company
+      );
     },
+
+    hasRole:
+      (state) =>
+      (role: string): boolean => {
+        return state.currentUser?.roles.includes(role) ?? false;
+      },
   },
 
   actions: {
-    /**
-     * Inscription : Création du compte (/user) puis auto-connexion
-     */
-    async register(payload: RegisterPayload): Promise<User> {
+    async register(payload: RegisterInput): Promise<User> {
       this.loading = true;
       this.error = null;
       try {
-        // 1. Création de l'utilisateur
-        await api.post("/user", payload);
-
-        // 2. Connexion automatique après inscription
+        await userRepository.register(payload);
         await this.login({
           email: payload.email,
           password: payload.password,
@@ -84,24 +71,25 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    /**
-     * Connexion : Obtention du token puis récupération du profil utilisateur (/me)
-     */
     async login(credentials: { email: string; password: string }) {
       this.loading = true;
       this.error = null;
       try {
-        // 1. Authentification LexikJWT
-        const { data } = await api.post<{ token: string }>(
+        localStorage.removeItem("user");
+        this.currentUser = null;
+
+        const { data } = await api.post<{ token: string; user: User }>(
           "/login_check",
           credentials,
         );
 
         this.token = data.token;
-        localStorage.setItem("token", data.token);
+        this.currentUser = data.user;
 
-        // 2. Récupération des infos de l'utilisateur connecté
-        await this.fetchCurrentUser();
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+
+        return data.user;
       } catch (err: any) {
         this.error = err.response?.data?.message || "Identifiants invalides.";
         throw err;
@@ -110,37 +98,44 @@ export const useAuthStore = defineStore("auth", {
       }
     },
 
-    /**
-     * Charge les infos du profil depuis `/api/me`
-     */
-    async fetchCurrentUser() {
+    async fetchCurrentUser(): Promise<User> {
       try {
-        const { data } = await api.get<User>("/user/me");
-        this.currentUser = data;
-        localStorage.setItem("user", JSON.stringify(data));
+        const user = await userRepository.getMe();
+        this.currentUser = user;
+
+        // Met à jour la propriété aCompany sur currentUser sans tenter d'écraser le getter
+        const hasCompanyStatus =
+          typeof user.hasCompany !== "undefined"
+            ? Boolean(user.hasCompany)
+            : Boolean(user.companyId || (user as any).company);
+
+        this.setHasCompany(hasCompanyStatus);
+
+        localStorage.setItem("user", JSON.stringify(this.currentUser));
+        return this.currentUser;
       } catch (error) {
         this.logout();
         throw error;
       }
     },
 
-    /**
-     * Mettre à jour son propre profil (/api/me)
-     */
-    async updateProfile(updatedData: {
-      email?: string;
-      firstName?: string;
-      lastName?: string;
-    }) {
-      const { data } = await api.put<User>("/me", updatedData);
-      this.currentUser = data;
-      localStorage.setItem("user", JSON.stringify(data));
-      return data;
+    setHasCompany(hasCompany: boolean) {
+      if (this.currentUser) {
+        this.currentUser = {
+          ...this.currentUser,
+          hasCompany,
+        };
+        localStorage.setItem("user", JSON.stringify(this.currentUser));
+      }
     },
 
-    /**
-     * Déconnexion
-     */
+    async updateProfile(updatedData: Partial<User>): Promise<User> {
+      const user = await userRepository.updateMe(updatedData);
+      this.currentUser = user;
+      localStorage.setItem("user", JSON.stringify(user));
+      return user;
+    },
+
     logout() {
       this.token = null;
       this.currentUser = null;

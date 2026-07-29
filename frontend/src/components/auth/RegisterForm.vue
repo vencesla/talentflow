@@ -244,13 +244,6 @@
             </div>
           </div>
         </template>
-        <!-- Champs spécifiques Recruteur via composant dédié -->
-        <RecruiterFields
-          v-if="selectedRole === 'ROLE_RECRUITER'"
-          v-model:company-name="registerForm.companyName"
-          v-model:company-website="registerForm.companyWebsite"
-          :errors="errors"
-        />
 
         <!-- Submit Button -->
         <div class="col-12 mt-4 text-center">
@@ -278,7 +271,6 @@
 import { ref, reactive, computed } from "vue";
 import { useAuthStore } from "@/stores/authStore";
 import LocationAutocomplete from "@/components/ui/LocationAutocomplete.vue";
-import RecruiterFields from "@/components/RecruiterFields.vue";
 
 const emit = defineEmits<{
   (e: "success", roles: string[]): void;
@@ -297,8 +289,6 @@ const registerForm = reactive({
   jobTitles: [] as string[],
   locations: [] as string[],
   contractTypes: [] as string[],
-  companyName: "",
-  companyWebsite: "",
 });
 
 // objets pour suivre les erreurs par champ

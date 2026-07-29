@@ -1,7 +1,8 @@
 import { z } from "zod";
+import { companySchema } from "./company.schema";
 
-// --- Constante pour les contrats autorisés ---
-const CONTRACT_TYPES = [
+// --- Types de contrats ---
+export const CONTRACT_TYPES = [
   "CDI",
   "CDD",
   "Freelance",
@@ -9,133 +10,51 @@ const CONTRACT_TYPES = [
   "Stage",
 ] as const;
 
-// --- Réponse API: User ---
-export const ApiUserSchema = z.object({
+// Helper : transforme `null` ou `undefined` en `[]` avant validation
+const safeArray = <T extends z.ZodTypeAny>(schema: T) =>
+  z.preprocess(
+    (val) => (val === null || val === undefined ? [] : val),
+    z.array(schema),
+  );
+
+// --- Réponse API : User (/api/me) ---
+export const userSchema = z.object({
   id: z.number(),
   email: z.string().email(),
-  firstName: z.string().nullable(),
-  lastName: z.string().nullable(),
-  createdAt: z.string(),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
   roles: z.array(z.string()),
-  // Champs candidat
-  jobTitles: z.array(z.string()),
-  locations: z.array(z.string()),
-  contractTypes: z.array(z.string()),
-  // Champs recruteur
-  companyName: z.string().nullable().optional(),
-  companyWebsite: z.string().nullable().optional(),
+  createdAt: z.string().optional(),
+
+  // Flag & relation Recruteur (nécessaire pour l'onboarding)
+  hasCompany: z.boolean().default(false),
+  companyId: z.number().nullable().optional(),
+  company: companySchema.nullable().optional(),
+
+  // Préférences Candidat (Sécurisées contre les `null` retournés par Symfony)
+  jobTitles: safeArray(z.string()),
+  locations: safeArray(z.string()),
+  contractTypes: safeArray(z.string()),
 });
 
-export type ApiUser = z.infer<typeof ApiUserSchema>;
+export type User = z.infer<typeof userSchema>;
 
-export const UsersListResponseSchema = z.array(ApiUserSchema);
-export type UsersListResponse = z.infer<typeof UsersListResponseSchema>;
-
-// --- Schémas de modification / création d'utilisateur (Admin ou formulaire candidat direct) ---
-export const CreateUserSchema = z.object({
+// --- Formulaire d'inscription ---
+export const registerSchema = z.object({
   email: z.string().email("Format d'email invalide"),
   password: z.string().min(8, "8 caractères minimum"),
-  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
-  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  jobTitles: z
-    .array(z.string())
-    .min(1, "Veuillez indiquer au moins un métier recherché"),
-  locations: z
-    .array(z.string())
-    .min(1, "Veuillez indiquer au moins une localité")
-    .max(10, "Vous ne pouvez pas sélectionner plus de 10 localités"),
-  contractTypes: z
-    .array(z.enum(CONTRACT_TYPES))
-    .min(1, "Veuillez sélectionner au moins un type de contrat"),
+  firstName: z.string().min(1, "Le prénom est obligatoire"),
+  lastName: z.string().min(1, "Le nom est obligatoire"),
+
+  // Rôle choisi à l'inscription (ROLE_CANDIDATE ou ROLE_RECRUITER)
+  roles: z
+    .array(z.enum(["ROLE_CANDIDATE", "ROLE_RECRUITER"]))
+    .min(1, "Veuillez choisir un rôle"),
+
+  // Informations candidat (Optionnelles à l'inscription)
+  jobTitles: z.array(z.string()).default([]),
+  locations: z.array(z.string()).max(10, "10 localités max").default([]),
+  contractTypes: z.array(z.enum(CONTRACT_TYPES)).default([]),
 });
 
-export const UpdateUserSchema = z.object({
-  email: z.string().email("Format d'email invalide"),
-  firstName: z.string().min(2, "Le prénom doit contenir au moins 2 caractères"),
-  lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  jobTitles: z
-    .array(z.string())
-    .min(1, "Veuillez indiquer au moins un métier recherché"),
-  locations: z
-    .array(z.string())
-    .min(1, "Veuillez indiquer au moins une localité")
-    .max(10, "Vous ne pouvez pas sélectionner plus de 10 localités"),
-  contractTypes: z
-    .array(z.enum(CONTRACT_TYPES))
-    .min(1, "Veuillez sélectionner au moins un type de contrat"),
-});
-
-// --- Formulaire d'inscription (Gestion dynamique selon le Rôle) ---
-export const registerSchema = z
-  .object({
-    email: z.string().email("Format d'email invalide"),
-    password: z
-      .string()
-      .min(8, "Le mot de passe doit contenir au moins 8 caractères"),
-    firstName: z
-      .string()
-      .min(2, "Le prénom doit contenir au moins 2 caractères"),
-    lastName: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-    roles: z
-      .array(z.enum(["ROLE_CANDIDATE", "ROLE_RECRUITER"]))
-      .min(1, "Veuillez choisir au moins un type de compte"),
-
-    // Champs candidat (Optionnels de base)
-    jobTitles: z.array(z.string()).default([]),
-    locations: z.array(z.string()).default([]),
-    contractTypes: z.array(z.enum(CONTRACT_TYPES)).default([]),
-
-    // Champs recruteur (Optionnels de base)
-    companyName: z.string().optional(),
-    companyWebsite: z.string().url("URL invalide").or(z.literal("")).optional(),
-  })
-  .superRefine((data, ctx) => {
-    // --- Validation si Candidat ---
-    if (data.roles.includes("ROLE_CANDIDATE")) {
-      if (!data.jobTitles || data.jobTitles.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Veuillez indiquer au moins un métier recherché",
-          path: ["jobTitles"],
-        });
-      }
-
-      if (!data.locations || data.locations.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Veuillez indiquer au moins une localité",
-          path: ["locations"],
-        });
-      } else if (data.locations.length > 10) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Vous ne pouvez pas sélectionner plus de 10 localités",
-          path: ["locations"],
-        });
-      }
-
-      if (!data.contractTypes || data.contractTypes.length === 0) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Veuillez sélectionner au moins un type de contrat",
-          path: ["contractTypes"],
-        });
-      }
-    }
-
-    // --- Validation si Recruteur ---
-    if (data.roles.includes("ROLE_RECRUITER")) {
-      if (!data.companyName || data.companyName.trim() === "") {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Le nom de l'entreprise est obligatoire",
-          path: ["companyName"],
-        });
-      }
-    }
-  });
-
-export type CreateUserInput = z.infer<typeof CreateUserSchema>;
-export type UpdateUserInput = z.infer<typeof UpdateUserSchema>;
 export type RegisterInput = z.infer<typeof registerSchema>;
-export type UserResponseDto = z.infer<typeof ApiUserSchema>;

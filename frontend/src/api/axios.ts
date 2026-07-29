@@ -26,16 +26,18 @@ api.interceptors.response.use(
   (error) => {
     const isAuthEndpoint = error.config?.url?.includes("/login_check");
 
-    // Redirige uniquement si le 401 survient hors de la page de connexion
+    // Redirige uniquement si le 401 survient hors du chemin d'authentification
     if (error.response?.status === 401 && !isAuthEndpoint) {
       const authStore = useAuthStore();
 
       // Réinitialise l'état Pinia + localStorage
       authStore.logout();
 
-      // Redirection si l'utilisateur n'est pas déjà sur la page de login
-      if (window.location.pathname !== "/login") {
-        window.location.href = "/login";
+      const authPath = "/connexion-inscription.html";
+
+      // Redirection si l'utilisateur n'est pas déjà sur la page d'auth
+      if (!window.location.pathname.includes(authPath)) {
+        window.location.href = `${authPath}#connexion`;
       }
     }
 

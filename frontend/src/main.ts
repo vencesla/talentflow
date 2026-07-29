@@ -1,15 +1,20 @@
+// src/main.ts
 import { createApp } from "vue";
-import "./style.css";
+import { createPinia } from "pinia";
 import App from "./App.vue";
 import router from "./router";
-import { createPinia } from "pinia";
 
-// Bootstrap CSS et JS
+// 1. Framework CSS (Bootstrap) EN PREMIER pour qu'il serve de base
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 
+import "./style.css";
 import "@/assets/css/auth.css";
 import "@/assets/css/home.css";
 
+const app = createApp(App);
 const pinia = createPinia();
-createApp(App).use(pinia).use(router).mount("#app");
+
+app.use(pinia);
+app.use(router);
+app.mount("#app");
