@@ -26,8 +26,4 @@ class CreateUserDto
     public array $jobTitles = [];
     public array $locations = [];
     public array $contractTypes = [];
-
-    // --- CHAMPS RECRUTEUR ---
-    public ?string $companyName = null;
-    public ?string $companyWebsite = null;
 }

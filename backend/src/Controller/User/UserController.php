@@ -19,7 +19,7 @@ final class UserController extends AbstractController
     /**
      * Inscription (Publique)
      */
-    #[Route('/user', name: 'app_user_create', methods: ['POST'])]
+    #[Route('/user/register', name: 'app_user_create', methods: ['POST'])]
     public function create(
         Request $request,
         SerializerInterface $serializer,
@@ -36,7 +36,7 @@ final class UserController extends AbstractController
     /**
      * Récupérer le profil de l'utilisateur actuellement connecté (Securisé)
      */
-    #[Route('/user/me', name: 'app_user_me', methods: ['GET'])]
+    #[Route('/me', name: 'app_user_me', methods: ['GET'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function me(#[CurrentUser] User $user, UserService $userService): JsonResponse
     {
@@ -46,7 +46,7 @@ final class UserController extends AbstractController
     /**
      * Modifier son propre profil (Securisé)
      */
-    #[Route('/user/me', name: 'app_user_update_me', methods: ['PUT'])]
+    #[Route('/user/update', name: 'app_user_update_me', methods: ['PUT'])]
     #[IsGranted('IS_AUTHENTICATED_FULLY')]
     public function updateMe(
         #[CurrentUser] User $user,

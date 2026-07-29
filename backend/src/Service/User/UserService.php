@@ -8,15 +8,16 @@ use App\Dto\User\UpdateUserDto;
 use App\Dto\User\UserResponseDto;
 use App\Entity\User;
 use App\Exception\ValidationException;
+use App\Service\Validation\DTOValidator;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class UserService
 {
     public function __construct(
-        private UserRepository $userRepository,
-        private ValidatorInterface $validator,
-        private UserPasswordHasherInterface $passwordHasher
+        private readonly UserRepository $userRepository,
+        private readonly DTOValidator $dtoValidator,
+        private readonly UserPasswordHasherInterface $passwordHasher
     )
     {}
 
@@ -32,12 +33,14 @@ final class UserService
 
     public function showUser(User $user): UserResponseDto
     {
-        return UserResponseDto::fromEntity($user);
+        $fullUser = $this->userRepository->findOneWithCompany($user->getId()) ?? $user;
+
+        return UserResponseDto::fromEntity($fullUser);
     }
 
     public function createUser(CreateUserDto $createUserDto): UserResponseDto
     {
-        $this->validateOrThrow($createUserDto);
+        $this->dtoValidator->validate($createUserDto);
 
         if ($createUserDto->email !== null) {
             $existingUser = $this->userRepository->findOneBy(['email' => $createUserDto->email]);
@@ -48,13 +51,6 @@ final class UserService
             }
         }
 
-        // Validation métier spécifique aux recruteurs
-        if (in_array('ROLE_RECRUITER', $createUserDto->roles, true) && empty($createUserDto->companyName)) {
-            throw new ValidationException([
-                'companyName' => ['Le nom de l\'entreprise est obligatoire pour un recruteur.']
-            ], 422);
-        }
-
         $user = new User();
         $user->setEmail($createUserDto->email);
         $user->setFirstName($createUserDto->firstName ?: null);
@@ -62,14 +58,11 @@ final class UserService
         $user->setRoles($createUserDto->roles);
 
         // Champs spécifiques selon le rôle
-        if (in_array('ROLE_RECRUITER', $createUserDto->roles, true)) {
-            $user->setCompanyName($createUserDto->companyName);
-            $user->setCompanyWebsite($createUserDto->companyWebsite ?: null);
-        } else {
+        if (in_array('ROLE_CANDIDATE', $createUserDto->roles, true)) {
             $user->setLocations($createUserDto->locations);
             $user->setJobTitles($createUserDto->jobTitles);
-            $user->setContractTypes($createUserDto->contractTypes);
-        }
+            $user->setContractTypes($createUserDto->contractTypes);   
+        } 
 
         $hashedPassword = $this->passwordHasher->hashPassword($user, $createUserDto->password);
         $user->setPassword($hashedPassword);
@@ -81,7 +74,7 @@ final class UserService
 
     public function updateUser(User $user, UpdateUserDto $updateUserDto): UserResponseDto
     {
-        $this->validateOrThrow($updateUserDto);
+        $this->dtoValidator->validate($updateUserDto);
 
         // Verification de l'email uniquement s'il est fourni et différent
         if ($updateUserDto->email !== null && $updateUserDto->email !== $user->getEmail()) {
@@ -111,19 +104,5 @@ final class UserService
     public function deleteUser(User $user): void
     {
         $this->userRepository->remove($user, true);
-    }
-
-    private function validateOrThrow(object $dto): void
-    {
-        $violations = $this->validator->validate($dto);
-
-        if (count($violations) > 0) {
-            $errors = [];
-            foreach ($violations as $violation) {
-                $errors[$violation->getPropertyPath()][] = $violation->getMessage();
-            }
-
-            throw new ValidationException($errors, 422);
-        }
     }
 }
