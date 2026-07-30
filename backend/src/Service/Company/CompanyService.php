@@ -11,6 +11,7 @@ use App\Exception\ValidationException;
 use App\Repository\CompanyRepository;
 use App\Service\Validation\DTOValidator;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 use Symfony\Component\Validator\Validator\ValidatorInterface;
 
 final class CompanyService
@@ -25,9 +26,14 @@ final class CompanyService
     {
         $this->dtoValidator->validate($dto);
 
-        // Si le recruteur a déjà une entreprise
         if ($user->getCompany() !== null) {
             throw new BadRequestHttpException('Vous êtes déjà rattaché à une entreprise.');
+        }
+
+        // Vérification de l'unicité du SIRET en base de données
+        $existingCompany = $this->companyRepository->findOneBy(['siret' => $dto->siret]);
+        if ($existingCompany !== null) {
+            throw new ConflictHttpException('Une entreprise avec ce SIRET existe déjà.');
         }
 
         $company = new Company();

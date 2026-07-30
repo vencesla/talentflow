@@ -10,14 +10,14 @@ export const companyRepository = {
 
   async getCompany(): Promise<companyType> {
     const res = await api.get("/companies/me");
-    return res.data;
+    return res.data.data || res.data.data;
   },
 
   async updateCompany(payload: updateCompanyType): Promise<companyType> {
     const sanitized = sanitizePayload(payload);
 
-    const response = await api.put("/companies/me", sanitized);
-    return response.data;
+    const res = await api.put("/companies/me", sanitized);
+    return res.data.data || res.data;
   },
 };
 

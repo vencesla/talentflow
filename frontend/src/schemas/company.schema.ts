@@ -12,7 +12,7 @@ const optionalUrl = z
 // Onglet 1 : Infos Générales & Identité
 export const generalInfoSchema = z.object({
   name: z.string().min(1, "Le nom de l'entreprise est obligatoire"),
-  siret: z.string().optional().or(z.literal("")),
+  siret: z.string().min(1, "Le siret de l'entreprise est obligatoire"),
   industry: z.string().optional().or(z.literal("")),
   description: z.string().optional().or(z.literal("")),
   website: optionalUrl,

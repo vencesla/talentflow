@@ -13,26 +13,24 @@ export const useCompanyStore = defineStore("company", () => {
 
   async function fetchMyCompany(): Promise<updateCompanyType | null> {
     loading.value = true;
-    error.value = null; // Reinitialise l'erreur d'IHM au départ
+    error.value = null;
 
     try {
       const data = await companyRepository.getCompany();
 
-      // Si l'API renvoie null, undefined ou un objet vide
       if (!data || (!data.id && !data.name)) {
         company.value = null;
         authStore.setHasCompany(false);
         return null;
       }
 
-      // Normalisation des champs null en chaînes vides pour l'IHM
       const sanitizedData: updateCompanyType = {
         name: data.name || "",
         siret: data.siret || "",
         industry: data.industry || "",
         description: data.description || "",
         website: data.website || "",
-        logo: (data as any).logo || (data as any).logo || "",
+        logo: (data as any).logo || "",
         address: data.address || "",
         zipCode: data.zipCode || "",
         city: data.city || "",
@@ -49,7 +47,7 @@ export const useCompanyStore = defineStore("company", () => {
       if (status === 404 || status === 400 || status === 422) {
         company.value = null;
         authStore.setHasCompany(false);
-        error.value = null; //
+        error.value = null;
         return null;
       }
 
@@ -65,26 +63,27 @@ export const useCompanyStore = defineStore("company", () => {
     }
   }
 
-  async function saveCompany(
-    payload: updateCompanyType,
-  ): Promise<companyType | null> {
+  /**
+   * Enregistre (POST) ou met à jour (PUT) l'entreprise.
+   * Renvoie true en cas de succès, false en cas d'erreur.
+   */
+  async function saveCompany(payload: updateCompanyType): Promise<boolean> {
     loading.value = true;
     error.value = null;
 
     try {
       let result: companyType;
 
-      // 💡 Si l'entreprise n'existe pas encore (pas d'ID), on passe en CRÉATION (POST)
+      // Si l'entreprise n'existe pas encore (pas d'ID), on passe en CRÉATION
       if (!company.value?.id) {
         result = await companyRepository.createCompany(payload);
       } else {
-        // Sinon, on met à jour l'entreprise existante (PUT)
         result = await companyRepository.updateCompany(payload);
       }
 
       company.value = result;
       authStore.setHasCompany(true);
-      return result;
+      return true;
     } catch (err: any) {
       console.error("Détail de l'erreur API :", err.response?.data || err);
 
@@ -92,11 +91,12 @@ export const useCompanyStore = defineStore("company", () => {
         err.response?.data?.message || err.response?.data?.error;
       error.value = apiMessage || "Erreur lors de l'enregistrement.";
 
-      return null;
+      return false;
     } finally {
       loading.value = false;
     }
   }
+
   return {
     company,
     loading,

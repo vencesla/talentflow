@@ -9,6 +9,7 @@ class CompanyInputDto
     #[Assert\Length(max: 255)]
     public string $name;
 
+    #[Assert\NotBlank]
     #[Assert\Regex(
         pattern: '/^[0-9]{14}$/',
         message: 'Le SIRET doit contenir exactement 14 chiffres.'

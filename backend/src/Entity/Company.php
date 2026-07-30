@@ -19,7 +19,7 @@ class Company
     #[ORM\Column(length: 255)]
     private ?string $name = null;
 
-    #[ORM\Column(length: 14, unique: true, nullable: true)]
+    #[ORM\Column(length: 14, unique: true)]
     private ?string $siret = null;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
@@ -52,9 +52,16 @@ class Company
     #[ORM\Column(length: 100, nullable: true)]
     private ?string $city = null;
 
+    /**
+     * @var Collection<int, JobOffer>
+     */
+    #[ORM\OneToMany(targetEntity: JobOffer::class, mappedBy: 'company')]
+    private Collection $jobOffers;
+
     public function __construct()
     {
         $this->users = new ArrayCollection();
+        $this->jobOffers = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -208,6 +215,36 @@ class Company
     public function setCity(?string $city): static
     {
         $this->city = $city;
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, JobOffer>
+     */
+    public function getJobOffers(): Collection
+    {
+        return $this->jobOffers;
+    }
+
+    public function addJobOffer(JobOffer $jobOffer): static
+    {
+        if (!$this->jobOffers->contains($jobOffer)) {
+            $this->jobOffers->add($jobOffer);
+            $jobOffer->setCompany($this);
+        }
+
+        return $this;
+    }
+
+    public function removeJobOffer(JobOffer $jobOffer): static
+    {
+        if ($this->jobOffers->removeElement($jobOffer)) {
+            // set the owning side to null (unless already changed)
+            if ($jobOffer->getCompany() === $this) {
+                $jobOffer->setCompany(null);
+            }
+        }
 
         return $this;
     }

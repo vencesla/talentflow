@@ -15,7 +15,7 @@
 
     <!-- SIRET -->
     <div class="col-md-6 text-start">
-      <label for="siret" class="form-label">Numéro SIRET</label>
+      <label for="siret" class="form-label">Numéro SIRET *</label>
       <input
         id="siret"
         type="text"

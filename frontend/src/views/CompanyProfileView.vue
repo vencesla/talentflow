@@ -118,6 +118,7 @@ import { generalInfoSchema, companySchema } from "@/schemas/company.schema";
 import type { updateCompanyType } from "@/schemas/company.schema";
 import CompanyGeneralTab from "@/components/company/CompanyGeneralTab.vue";
 import CompanyLocationTab from "@/components/company/CompanyLocationTab.vue";
+import router from "@/router";
 
 const STORAGE_KEY = "company_general_draft";
 
@@ -145,15 +146,13 @@ onMounted(async () => {
   const existingCompany = await companyStore.fetchMyCompany();
 
   if (existingCompany) {
-    // 💡 Astuce : On s'assure qu'AUCUN champ ne reste à `null`
     formData.value = {
       name: existingCompany.name || "",
       siret: existingCompany.siret || "",
       industry: existingCompany.industry || "",
       description: existingCompany.description || "",
       website: existingCompany.website || "",
-      logo:
-        (existingCompany as any).logo || (existingCompany as any).logo || "",
+      logo: (existingCompany as any).logo || "",
       address: existingCompany.address || "",
       zipCode: existingCompany.zipCode || "",
       city: existingCompany.city || "",
@@ -214,8 +213,10 @@ function clearErrors(fields: string[]) {
 async function handleSubmit() {
   errors.value = {};
 
-  // 1. Validation Frontend
   const result = companySchema.safeParse(formData.value);
+
+  console.log("Données envoyées :", formData.value);
+  console.log("Résultat Zod :", result);
 
   if (!result.success) {
     result.error.issues.forEach((issue) => {
@@ -224,7 +225,6 @@ async function handleSubmit() {
       }
     });
 
-    // Rediriger vers le bon onglet contenant l'erreur
     if (tabHasErrors("general")) {
       currentTab.value = "general";
     } else if (tabHasErrors("location")) {
@@ -233,16 +233,20 @@ async function handleSubmit() {
     return;
   }
 
-  // 2. Appel API
-  const res = await companyStore.saveCompany(formData.value);
+  const isSaved = await companyStore.saveCompany(formData.value);
 
-  if (res) {
-    // Succès
+  if (isSaved) {
     localStorage.removeItem(STORAGE_KEY);
     hasDraft.value = false;
+    await router.push({ name: "recruiter-dashboard" });
   } else {
-    // Si l'API a renvoyé une erreur, inspectez la console
-    console.error("Échec de l'enregistrement API:", companyStore.error);
+    if (
+      companyStore.error &&
+      companyStore.error.toLowerCase().includes("siret")
+    ) {
+      errors.value.siret = companyStore.error;
+      currentTab.value = "general";
+    }
   }
 }
 </script>
